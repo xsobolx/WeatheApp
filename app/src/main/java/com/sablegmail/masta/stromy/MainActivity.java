@@ -56,8 +56,7 @@ public class MainActivity extends ActionBarActivity {
                 }
             });
         } else {
-            Toast.makeText(this, getString(R.string.network_unavailable_message),
-                    Toast.LENGTH_LONG).show();
+            alertUserAboutNetworkUnavailableError();
         }
         Log.d(TAG, "Main UI code is running!");
     }
@@ -80,5 +79,6 @@ public class MainActivity extends ActionBarActivity {
 
     private void alertUserAboutNetworkUnavailableError(){
         NetworkUnavailableDialog dialog = new NetworkUnavailableDialog();
+        dialog.show(getFragmentManager(), "error_dialog");
     }
 }
