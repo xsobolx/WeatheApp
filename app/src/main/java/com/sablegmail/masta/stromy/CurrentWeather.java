@@ -35,7 +35,7 @@ public class CurrentWeather {
     public int getIconId(){
         int iconId = R.drawable.clear_day;
 
-        switch (mIcon){
+        switch (getIcon()){
             case "clear-day":
                 iconId = R.drawable.clear_day;
                 break;
@@ -120,8 +120,8 @@ public class CurrentWeather {
         mTime = time;
     }
 
-    public double getTemperature() {
-        return mTemperature;
+    public int getTemperature() {
+        return (int) Math.round(((mTemperature - 32) * 5/9));
     }
 
     public void setTemperature(double temperature) {
@@ -129,15 +129,15 @@ public class CurrentWeather {
     }
 
     public double getHumidity() {
-        return mHumidity;
+        return Math.round(mHumidity * 100);
     }
 
     public void setHumidity(double humidity) {
         mHumidity = humidity;
     }
 
-    public double getPrecipeChance() {
-        return mPrecipeChance;
+    public int getPrecipeChance() {
+        return (int) Math.round(mPrecipeChance * 100);
     }
 
     public void setPrecipeChance(double precipeChance) {
