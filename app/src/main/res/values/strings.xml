@@ -7,4 +7,9 @@
     <string name="error_message">Произошла ошибка. Попробуйте повторить позднее.</string>
     <string name="error_ok_button_text">OK</string>
     <string name="network_unavailable_message">Сеть недоступна!</string>
+    <string name="humidity_label_text">Влажность</string>
+    <string name="location_label_text">Московская область</string>
+    <string name="time_label_text">В 5:00 АМ будет</string>
+    <string name="percipChance_label_text">СНЕГ/ДОЖДЬ</string>
+
 </resources>
