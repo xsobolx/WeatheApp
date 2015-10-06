@@ -1,10 +1,12 @@
 package com.sablegmail.masta.stromy;
 
+import android.app.Activity;
 import android.content.Context;
-import android.graphics.drawable.Drawable;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -22,15 +24,22 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends Activity implements LocationProvider.LocationCallback{
 
     public static final String TAG = MainActivity.class.getSimpleName();
     private CurrentWeather mCurrentWeather;
+    private LocationProvider mLocationProvider;
+    private Geocoder mGeocoder;
+    private ArrayList<Address> adresses;
+
+    private double currentLatitude = 0;
+    private double currentLongitude = 0;
 
     @Bind(R.id.temperatureLabel) TextView mTemperatureLabel;
     @Bind(R.id.timeLabel) TextView mTimeLabel;
@@ -42,26 +51,56 @@ public class MainActivity extends ActionBarActivity {
     @Bind(R.id.degreeImageView) ImageView mDegreeImageView;
     @Bind(R.id.progressBar) ProgressBar mProgressBar;
 
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
-        final double latitude = 55.488091;
-        final double longitude = 36.033576;
-
         mIconImageView.setVisibility(View.INVISIBLE);
         mDegreeImageView.setVisibility(View.INVISIBLE);
         mProgressBar.setVisibility(View.INVISIBLE);
 
+        mLocationProvider = new LocationProvider(this, this);
+        mGeocoder = new Geocoder(this);
+
+
+
         mRefreshImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getForecast(latitude, longitude);
+                getForecast(currentLatitude, currentLongitude);
+
+                getAddress();
             }
         });
 
         Log.d(TAG, "Main UI code is running!");
+    }
+
+    private void getAddress() {
+        try {
+            adresses = (ArrayList) mGeocoder.getFromLocation(currentLatitude, currentLongitude, 1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Address address = adresses.get(0);
+
+        TextView addressTV = (TextView) findViewById(R.id.locationLabel);
+        addressTV.setText(address.getAddressLine(0));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mLocationProvider.connect();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mLocationProvider.disconnect();
     }
 
     private void getForecast(double latitude, double longitude) {
@@ -111,9 +150,7 @@ public class MainActivity extends ActionBarActivity {
                         } else {
                             alertUserAboutConnectionFailError();
                         }
-                    } catch (IOException e) {
-                        Log.e(TAG, "Exception caught: ");
-                    } catch (JSONException e) {
+                    } catch (IOException | JSONException e) {
                         Log.e(TAG, "Exception caught: ");
                     }
                 }
@@ -184,5 +221,13 @@ public class MainActivity extends ActionBarActivity {
     private void alertUserAboutNetworkUnavailableError(){
         NetworkUnavailableDialog dialog = new NetworkUnavailableDialog();
         dialog.show(getFragmentManager(), "error_dialog");
+    }
+
+    @Override
+    public void handleNewLocation(Location location) {
+        Log.d(TAG, location.toString());
+
+        currentLongitude = location.getLongitude();
+        currentLatitude = location.getLatitude();
     }
 }

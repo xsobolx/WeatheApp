@@ -11,5 +11,5 @@
     <string name="location_label_text">Московская область</string>
     <string name="time_label_text">В 5:00 АМ будет</string>
     <string name="percipChance_label_text">СНЕГ/ДОЖДЬ</string>
-
+    <string name="google_maps_key_instructions" templateMergeStrategy="replace">AIzaSyDDJ0aWnssuFLGQdY5QvzOxBqkJvKgMbhk</string>
 </resources>
