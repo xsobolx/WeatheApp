@@ -1,4 +1,4 @@
-package com.sablegmail.masta.stromy;
+package com.sablegmail.masta.stromy.location;
 
 import android.content.Context;
 import android.location.Location;

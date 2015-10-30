@@ -1,4 +1,9 @@
-package com.sablegmail.masta.stromy;
+package com.sablegmail.masta.stromy.weather;
+
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import com.sablegmail.masta.stromy.R;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -7,7 +12,7 @@ import java.util.TimeZone;
 /**
  * Created by admin on 29.09.2015.
  */
-public class CurrentWeather {
+public class Current implements Parcelable{
     private String mIcon;
     private long mTime;
     private double mTemperature;
@@ -15,6 +20,28 @@ public class CurrentWeather {
     private double mPrecipeChance;
     private String mSummary;
     private String mTimeZone;
+
+    protected Current(Parcel in) {
+        mIcon = in.readString();
+        mTime = in.readLong();
+        mTemperature = in.readDouble();
+        mHumidity = in.readDouble();
+        mPrecipeChance = in.readDouble();
+        mSummary = in.readString();
+        mTimeZone = in.readString();
+    }
+
+    public static final Creator<Current> CREATOR = new Creator<Current>() {
+        @Override
+        public Current createFromParcel(Parcel in) {
+            return new Current(in);
+        }
+
+        @Override
+        public Current[] newArray(int size) {
+            return new Current[size];
+        }
+    };
 
     public String getTimeZone() {
         return mTimeZone;
@@ -76,7 +103,7 @@ public class CurrentWeather {
         return mTime;
     }
 
-    public String getFormatedTime(){
+    public String getFormattedTime(){
         SimpleDateFormat formatter = new SimpleDateFormat("h:mm a");
         formatter.setTimeZone(TimeZone.getTimeZone(getTimeZone()));
         Date dateTime = new Date(getTime());
@@ -118,5 +145,31 @@ public class CurrentWeather {
 
     public void setSummary(String summary) {
         mSummary = summary;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(mIcon);
+        dest.writeLong(mTime);
+        dest.writeDouble(mTemperature);
+        dest.writeDouble(mHumidity);
+        dest.writeDouble(mPrecipeChance);
+        dest.writeString(mSummary);
+        dest.writeString(mTimeZone);
+    }
+
+    public void readFromParcel(Parcel in){
+        mIcon = in.readString();
+        mTime = in.readLong();
+        mTemperature = in.readDouble();
+        mHumidity = in.readDouble();
+        mPrecipeChance = in.readDouble();
+        mSummary = in.readString();
+        mTimeZone = in.readString();
     }
 }

@@ -1,19 +1,28 @@
-package com.sablegmail.masta.stromy;
+package com.sablegmail.masta.stromy.UI;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Parcel;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.sablegmail.masta.stromy.location.LocationProvider;
+import com.sablegmail.masta.stromy.R;
+import com.sablegmail.masta.stromy.weather.Current;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.OkHttpClient;
@@ -30,16 +39,16 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 
 
-public class MainActivity extends Activity implements LocationProvider.LocationCallback{
+public  class MainActivity extends Activity implements LocationProvider.LocationCallback {
 
     public static final String TAG = MainActivity.class.getSimpleName();
-    private CurrentWeather mCurrentWeather;
+    private Current mCurrent;
     private LocationProvider mLocationProvider;
     private Geocoder mGeocoder;
-    private ArrayList<Address> adresses;
-
+    private ArrayList adresses;
     private double currentLatitude = 0;
     private double currentLongitude = 0;
+    private LocationManager mLocationManager;
 
     @Bind(R.id.temperatureLabel) TextView mTemperatureLabel;
     @Bind(R.id.timeLabel) TextView mTimeLabel;
@@ -63,14 +72,17 @@ public class MainActivity extends Activity implements LocationProvider.LocationC
 
         mLocationProvider = new LocationProvider(this, this);
         mGeocoder = new Geocoder(this);
+        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
+        if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
+            buildAlertMessageNoGps();
+        }
 
-
+        //set click listener on refreshButton
         mRefreshImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 getForecast(currentLatitude, currentLongitude);
-
                 getAddress();
             }
         });
@@ -78,17 +90,39 @@ public class MainActivity extends Activity implements LocationProvider.LocationC
         Log.d(TAG, "Main UI code is running!");
     }
 
+    private void buildAlertMessageNoGps() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                })
+                .create()
+                .show();
+    }
+
+
     private void getAddress() {
         try {
-            adresses = (ArrayList) mGeocoder.getFromLocation(currentLatitude, currentLongitude, 1);
+            adresses = (ArrayList) mGeocoder.getFromLocation(currentLatitude, currentLongitude, 2);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        Address address = adresses.get(0);
-
-        TextView addressTV = (TextView) findViewById(R.id.locationLabel);
-        addressTV.setText(address.getAddressLine(0));
+        if (adresses.size() > 0){
+            Address address = (Address) adresses.get(0);
+            TextView addressTV = (TextView) findViewById(R.id.locationLabel);
+            addressTV.setText(address.getAddressLine(0));
+        }
     }
 
     @Override
@@ -140,7 +174,7 @@ public class MainActivity extends Activity implements LocationProvider.LocationC
                         String jsonData = response.body().string();
                         Log.v(TAG, jsonData);
                         if (response.isSuccessful()) {
-                            mCurrentWeather = getCurrentDetails(jsonData);
+                            mCurrent = getCurrentDetails(jsonData);
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -160,6 +194,7 @@ public class MainActivity extends Activity implements LocationProvider.LocationC
         }
     }
 
+    //toggle between progbar & refresh button
     private void toggleRefresh() {
         if (mProgressBar.getVisibility() == View.INVISIBLE) {
             mProgressBar.setVisibility(View.VISIBLE);
@@ -171,35 +206,34 @@ public class MainActivity extends Activity implements LocationProvider.LocationC
     }
 
     private void updateDisplay() {
-        mTemperatureLabel.setText(mCurrentWeather.getTemperature() + "");
-        mTimeLabel.setText(mCurrentWeather.getFormatedTime());
-        mHumidityValue.setText(mCurrentWeather.getHumidity() + "%");
-        mPrecipValue.setText(mCurrentWeather.getPrecipeChance() + "%");
-        mSummaryLabel.setText(mCurrentWeather.getSummary());
-        mIconImageView.setImageResource(mCurrentWeather.getIconId());
+        mTemperatureLabel.setText(mCurrent.getTemperature() + "");
+        mTimeLabel.setText(mCurrent.getFormattedTime());
+        mHumidityValue.setText(mCurrent.getHumidity() + "%");
+        mPrecipValue.setText(mCurrent.getPrecipeChance() + "%");
+        mSummaryLabel.setText(mCurrent.getSummary());
+        mIconImageView.setImageResource(mCurrent.getIconId());
         mIconImageView.setVisibility(View.VISIBLE);
         mDegreeImageView.setVisibility(View.VISIBLE);
     }
 
-    private CurrentWeather getCurrentDetails(String jsonData) throws JSONException {
+    //parsing JSON
+    private Current getCurrentDetails(String jsonData) throws JSONException {
         JSONObject forecast = new JSONObject(jsonData);
         String timeZone = forecast.getString("timezone");
         Log.i(TAG, "From JSON: " + timeZone);
-
         JSONObject currently = forecast.getJSONObject("currently");
+        Current current = new Current(Parcel.obtain());
+        current.setHumidity(currently.getDouble("humidity"));
+        current.setTime(currently.getLong("time"));
+        current.setIcon(currently.getString("icon"));
+        current.setPrecipeChance(currently.getDouble("precipProbability"));
+        current.setSummary(currently.getString("summary"));
+        current.setTemperature(currently.getDouble("temperature"));
+        current.setTimeZone(timeZone);
 
-        CurrentWeather currentWeather = new CurrentWeather();
-        currentWeather.setHumidity(currently.getDouble("humidity"));
-        currentWeather.setTime(currently.getLong("time"));
-        currentWeather.setIcon(currently.getString("icon"));
-        currentWeather.setPrecipeChance(currently.getDouble("precipProbability"));
-        currentWeather.setSummary(currently.getString("summary"));
-        currentWeather.setTemperature(currently.getDouble("temperature"));
-        currentWeather.setTimeZone(timeZone);
+        Log.d(TAG, current.getFormattedTime());
 
-        Log.d(TAG, currentWeather.getFormatedTime());
-
-        return currentWeather;
+        return current;
     }
 
     private boolean isNetworkAvailable(){
