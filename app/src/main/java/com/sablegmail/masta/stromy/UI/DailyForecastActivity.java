@@ -15,6 +15,7 @@ import android.widget.TextView;
 import com.sablegmail.masta.stromy.R;
 import com.sablegmail.masta.stromy.adapters.DayAdapter;
 import com.sablegmail.masta.stromy.weather.Day;
+import com.sablegmail.masta.stromy.weather.Forecast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,7 +36,7 @@ public class DailyForecastActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         Intent intent = getIntent();
-        Parcelable[] parcelables = intent.getParcelableArrayExtra(MainActivity.DAILY_FORECAST);
+        Parcelable[] parcelables = intent.getParcelableArrayExtra(ForecastActivity.DAILY_FORECAST);
 
         mDays = Arrays.copyOf(parcelables, parcelables.length, Day[].class);
 
